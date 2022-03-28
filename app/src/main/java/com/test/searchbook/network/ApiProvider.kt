@@ -53,9 +53,9 @@ class ApiProvider @Inject constructor() {
 
         return OkHttpClient.Builder()
             .sslSocketFactory(sslContext.socketFactory, trustAllCerts[0])
-            .readTimeout(30 * 1000L, TimeUnit.MICROSECONDS)
-            .writeTimeout(30 * 1000L, TimeUnit.MICROSECONDS)
-            .connectTimeout(30 * 1000L, TimeUnit.MICROSECONDS)
+            .readTimeout(30 * 1000L, TimeUnit.MILLISECONDS)
+            .writeTimeout(30 * 1000L, TimeUnit.MILLISECONDS)
+            .connectTimeout(30 * 1000L, TimeUnit.MILLISECONDS)
     }
 
     fun <T> createApi(service: Class<T>, url: String): T {
