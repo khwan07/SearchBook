@@ -7,6 +7,7 @@ import retrofit2.Retrofit
 import retrofit2.adapter.rxjava3.RxJava3CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 import java.security.cert.X509Certificate
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,6 +21,8 @@ class ApiProvider @Inject constructor() {
         const val BOOK_API_HOST = "https://api.itbook.store/1.0/"
     }
 
+    private val executor = Executors.newSingleThreadExecutor()
+
     private fun getRetrofitApiClient(url: String): Retrofit {
         val clientBuilder = createOkHttpClientBuilder()
         val gson = GsonBuilder().setLenient().create()
@@ -27,7 +30,11 @@ class ApiProvider @Inject constructor() {
             .client(clientBuilder.build())
             .baseUrl(url)
             .addConverterFactory(GsonConverterFactory.create(gson))
-            .addCallAdapterFactory(RxJava3CallAdapterFactory.createWithScheduler(Schedulers.io()))
+            .addCallAdapterFactory(
+                RxJava3CallAdapterFactory.createWithScheduler(
+                    Schedulers.from(executor)
+                )
+            )
             .build()
     }
 
