@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.test.searchbook.di.ViewModelFactory
 import com.test.searchbook.di.ViewModelKey
+import com.test.searchbook.presentation.BookDetailViewModel
 import com.test.searchbook.presentation.BookViewModel
 import dagger.Binds
 import dagger.Module
@@ -18,4 +19,9 @@ abstract class ViewModelModule {
     @IntoMap
     @ViewModelKey(BookViewModel::class)
     abstract fun bindBookViewModel(bookViewModel: BookViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(BookDetailViewModel::class)
+    abstract fun bindBookDetailViewModel(bookDetailViewModel: BookDetailViewModel): ViewModel
 }

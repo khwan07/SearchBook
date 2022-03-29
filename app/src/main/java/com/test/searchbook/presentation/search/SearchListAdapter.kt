@@ -4,6 +4,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.test.searchbook.presentation.SimpleAdapter
+import io.reactivex.rxjava3.subjects.PublishSubject
+import io.reactivex.rxjava3.subjects.Subject
 
 class SearchListAdapter(private val requestManager: RequestManager) :
     SimpleAdapter<ViewItem, RecyclerView.ViewHolder>() {
@@ -12,10 +14,17 @@ class SearchListAdapter(private val requestManager: RequestManager) :
         setHasStableIds(true)
     }
 
+    val click: Subject<RecyclerView.ViewHolder> = PublishSubject.create()
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
-            ViewType.BOOK.ordinal -> SearchViewHolder.newInstance(parent)
-            else -> SearchLoadingViewHolder.newInstance(parent)
+            ViewType.BOOK.ordinal -> {
+                SearchViewHolder.newInstance(parent)
+                    .apply { this.click.subscribe(this@SearchListAdapter.click) }
+            }
+            else -> {
+                SearchLoadingViewHolder.newInstance(parent)
+            }
         }
     }
 

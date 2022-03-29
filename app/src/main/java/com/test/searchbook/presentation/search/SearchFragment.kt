@@ -14,6 +14,7 @@ import com.jakewharton.rxbinding4.view.clicks
 import com.jakewharton.rxbinding4.widget.textChanges
 import com.test.searchbook.databinding.FragmentSearchBinding
 import com.test.searchbook.presentation.BookViewModel
+import com.test.searchbook.presentation.detail.BookDetailFragment
 import dagger.android.support.DaggerFragment
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
@@ -62,7 +63,23 @@ class SearchFragment : DaggerFragment() {
     }
 
     private fun initUI() {
-        adapter = SearchListAdapter(requestManager)
+        adapter = SearchListAdapter(requestManager).apply {
+            click.map { it.adapterPosition }
+                .subscribe({
+                    val item = bookViewModel.bookList.value?.getOrNull(it) as? ViewItem.BookItem
+                        ?: return@subscribe
+
+                    // TODO : animation
+                    val fragment = BookDetailFragment.newInstance(item.data.isbn13)
+                    childFragmentManager.beginTransaction()
+                        .replace(binding.fragmentArea.id, fragment, BookDetailFragment.TAG)
+                        .addToBackStack(BookDetailFragment.TAG)
+                        .setPrimaryNavigationFragment(fragment)
+                        .commitAllowingStateLoss()
+
+                }, Throwable::printStackTrace)
+                .addTo(compositeDisposable)
+        }
         binding.bookList.itemAnimator = null
         binding.bookList.layoutManager =
             LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false)

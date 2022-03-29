@@ -2,6 +2,7 @@ package com.test.searchbook.repository
 
 import android.util.Log
 import com.test.searchbook.data.api.BookApi
+import com.test.searchbook.data.api.model.BookDetail
 import com.test.searchbook.data.api.model.SearchResult
 import io.reactivex.rxjava3.core.Single
 import javax.inject.Inject
@@ -23,7 +24,12 @@ class BookRepository @Inject constructor() {
                 Log.d(TAG, "searchBook success:${it.body()}")
             }
             .map {
-                it.body() ?: throw IllegalArgumentException("body is null")
+                it.body() ?: throw IllegalArgumentException("searchBook body is null")
             }
+    }
+
+    fun bookDetail(isbn13: String): Single<BookDetail> {
+        return bookApi.booksDetail(isbn13)
+            .map { it.body() ?: throw IllegalArgumentException("bookDetail body is null") }
     }
 }
