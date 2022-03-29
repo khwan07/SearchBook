@@ -29,7 +29,7 @@ class SearchViewHolder(private val binding: VhSearchBinding) : RecyclerView.View
         binding.root.clicks().map { this@SearchViewHolder }.subscribe(click)
     }
 
-    fun bind(book: Book, requestManager: RequestManager) {
+    fun bind(book: Book, requestManager: RequestManager, id: Long) {
         requestManager.load(book.image)
             .centerCrop()
             .into(binding.image)
@@ -37,6 +37,7 @@ class SearchViewHolder(private val binding: VhSearchBinding) : RecyclerView.View
         binding.title.text = book.title
         binding.subtitle.text = book.subtitle
         binding.price.text = book.price
+        binding.debugText.text = "$id" // TODO debug 제거하기
         // TODO : url webview?
     }
 }

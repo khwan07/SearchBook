@@ -5,15 +5,58 @@
     android:layout_height="match_parent"
     android:background="@android:color/holo_red_light">
 
+    <EditText
+        android:id="@+id/edit_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/search_view"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/test_btn"
+    <ImageView
+        android:id="@+id/search_view"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:src="@android:drawable/ic_menu_search"
+        android:layout_marginEnd="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/edit_text"
+        app:layout_constraintBottom_toBottomOf="@id/edit_text"/>
+
+    <TextView
+        android:id="@+id/or_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="test"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:background="@drawable/round_bg_blue"
+        android:minWidth="10dp"
+        android:text="or"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:gravity="center"
+        android:layout_marginStart="10dp"
+        android:includeFontPadding="false"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/edit_text"/>
+
+    <TextView
+        android:id="@+id/exclusive_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/round_bg_blue"
+        android:text="exclusive"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:gravity="center"
+        android:layout_marginStart="10dp"
+        android:includeFontPadding="false"
+        app:layout_constraintStart_toEndOf="@id/or_view"
+        app:layout_constraintTop_toBottomOf="@id/edit_text"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/book_list"
@@ -24,6 +67,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/test_btn" />
+        app:layout_constraintTop_toBottomOf="@id/or_view" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

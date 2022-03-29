@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.jakewharton.rxbinding4.view.clicks
+import com.jakewharton.rxbinding4.widget.textChanges
 import com.test.searchbook.databinding.FragmentSearchBinding
 import com.test.searchbook.presentation.BookViewModel
 import dagger.android.support.DaggerFragment
@@ -94,24 +95,46 @@ class SearchFragment : DaggerFragment() {
                 val lastPosition =
                     (recyclerView.layoutManager as LinearLayoutManager).findLastVisibleItemPosition()
                 if (bookViewModel.needNextPage(lastPosition)) {
-                    Log.d(TAG, "needNextPage $lastPosition")
-                    bookViewModel.searchNextPage("android")
+                    bookViewModel.searchNextPage(binding.editText.text.toString())
                 }
             }
         })
 
-        binding.testBtn.clicks()
-            .throttleFirst(100, TimeUnit.MILLISECONDS)
+        binding.searchView.isEnabled = false
+
+        binding.editText.textChanges()
             .subscribe({
-                bookViewModel.searchNextPage("android")
+                Log.d(TAG, "textChanges:$it")
+                binding.orView.isEnabled = !it.contains("|")
+                binding.exclusiveView.isEnabled = !it.contains("-")
+                binding.searchView.isEnabled = it.isNotEmpty()
+            }, Throwable::printStackTrace)
+            .addTo(compositeDisposable)
+
+        binding.searchView.clicks()
+            .throttleFirst(100, TimeUnit.MILLISECONDS)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                bookViewModel.searchNextPage(binding.editText.text.toString())
+            }, Throwable::printStackTrace)
+            .addTo(compositeDisposable)
+
+        binding.orView.clicks()
+            .subscribe({
+                val inputText = binding.editText.text.toString()
+                binding.editText.setText("$inputText|")
+            }, Throwable::printStackTrace)
+            .addTo(compositeDisposable)
+
+        binding.exclusiveView.clicks()
+            .subscribe({
+                val inputText = binding.editText.text.toString()
+                binding.editText.setText("$inputText-")
             }, Throwable::printStackTrace)
             .addTo(compositeDisposable)
     }
 
     private fun initViewModel() {
-        bookViewModel.bookTotalCount.observe(viewLifecycleOwner) {
-            adapter?.totalItemCount = it
-        }
         bookViewModel.bookList.observe(viewLifecycleOwner) {
             adapter?.items = it
         }

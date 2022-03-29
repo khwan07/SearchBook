@@ -21,6 +21,7 @@ open class BaseActivity : DaggerAppCompatActivity() {
         fragmentManager: FragmentManager,
         contentId: Int,
         tag: String,
+        addBackStack: Boolean,
         supplier: () -> T
     ): T {
         val oldFragment: T? = hasFragment(fragmentManager, tag)
@@ -28,11 +29,15 @@ open class BaseActivity : DaggerAppCompatActivity() {
             return oldFragment
         }
         val fragment = supplier()
-        fragmentManager.beginTransaction()
+        val transaction = fragmentManager.beginTransaction()
             .replace(contentId, fragment, tag)
             .setPrimaryNavigationFragment(fragment)
-            .addToBackStack(tag)
-            .commitAllowingStateLoss()
+
+        if (addBackStack) {
+            transaction.addToBackStack(tag)
+        }
+
+        transaction.commitAllowingStateLoss()
         return fragment
     }
 

@@ -4,12 +4,13 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
-import com.test.searchbook.data.api.model.Book
+import com.test.searchbook.presentation.search.PagingController
+import com.test.searchbook.presentation.search.ViewItem
+import com.test.searchbook.presentation.search.ViewType
 import com.test.searchbook.repository.BookRepository
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.kotlin.addTo
 import io.reactivex.rxjava3.kotlin.subscribeBy
-import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
 class BookViewModel @Inject constructor(application: Application) : AndroidViewModel(application) {
@@ -21,83 +22,79 @@ class BookViewModel @Inject constructor(application: Application) : AndroidViewM
     lateinit var bookRepository: BookRepository
 
     private val searchDisposables = CompositeDisposable()
-    private var pageInfo = PageInfo("")
-    val bookTotalCount: MutableLiveData<Int> = MutableLiveData(0)
-    val bookList: MutableLiveData<List<Book>> = MutableLiveData(listOf())
+    private val loadingViewItem = ViewItem.LoadingItem(Long.MAX_VALUE)
+    private var pagingController = PagingController()
+    val bookList: MutableLiveData<List<ViewItem>> = MutableLiveData(listOf())
+
 
     override fun onCleared() {
         searchDisposables.clear()
     }
 
     fun searchNextPage(query: String) {
-        if (pageInfo.key != query) {
-            pageInfo = PageInfo("")
+        if (pagingController.key != query) {
+            pagingController = PagingController()
+            pagingController.setQuery(query)
             searchDisposables.clear()
-        } else if (pageInfo.isLastPage()) {
+            bookList.postValue(emptyList())
+        } else if (pagingController.isLastPage()) {
             return
         }
-        val page = pageInfo.nextPage()
-        Log.d(TAG, "query page:$page")
-        pageInfo.loadProgress.incrementAndGet()
+
+        val validQuery = pagingController.validQuery() ?: return
+        val page = pagingController.nextPage(validQuery)
+        Log.d(TAG, "query page:$page, validQuery:$validQuery")
+
+        pagingController.incrementLoading()
         bookRepository.searchBook(query, page.toString())
             .subscribeBy(
                 onError = {
                     Log.e(TAG, "search error : ${it.message}")
                     it.printStackTrace()
-                    pageInfo.loadProgress.decrementAndGet()
+                    pagingController.decrementLoading()
                 },
                 onSuccess = { result ->
-                    val append = pageInfo.key == query
-                    pageInfo.apply {
-                        this.key = query
-                        this.page = kotlin.runCatching {
-                            result.page.toInt()
-                        }.getOrDefault(0)
-                        this.total = kotlin.runCatching {
-                            result.total.toInt()
-                        }.getOrDefault(0)
-                        this.count += result.books.size
-                        this.loadProgress.decrementAndGet()
-                    }
-                    Log.d(TAG, "total:${result.total}, page:${pageInfo.page}, count:${pageInfo.count}, size:${result.books.size}, loadProgress:${pageInfo.loadProgress.get()}")
+                    val append = pagingController.key == query
 
-                    if (append && bookList.value != null) {
-                        bookList.postValue(bookList.value!! + result.books)
+                    pagingController.key = query
+                    val loadProgress = pagingController.decrementLoading()
+                    pagingController.setResult(result, validQuery)
+                    Log.d(
+                        TAG,
+                        "total:${result.total}, page:${pagingController.page}, count:${pagingController.count}, size:${result.books.size}, loadProgress:${loadProgress}"
+                    )
+
+                    var list = if (append && bookList.value != null) {
+                        val offset =
+                            bookList.value!!.lastOrNull { it.viewType != ViewType.LOADING }?.id?.let { it + 1 }
+                                ?: 0L
+                        val appendList = pagingController.filterExclusive(result.books)
+                            .mapIndexed { index, book ->
+                                ViewItem.BookItem(offset + index, book)
+                            }
+                        bookList.value!!.filterNot { it.viewType == ViewType.LOADING } + appendList
                     } else {
-                        bookTotalCount.postValue(pageInfo.total)
-                        bookList.postValue(result.books)
+                        pagingController.filterExclusive(result.books).mapIndexed { index, book ->
+                            ViewItem.BookItem(index.toLong(), book)
+                        }
                     }
+
+                    if (pagingController.isLoading()) {
+                        list = list + loadingViewItem
+                    }
+                    bookList.postValue(list)
                 }
             )
             .addTo(searchDisposables)
     }
 
     fun needNextPage(position: Int): Boolean {
-        if (pageInfo.isLoading() || pageInfo.isLastPage()) {
+        if (pagingController.isMaxLoading()) {
             return false
         }
-        return position < pageInfo.total - 1
-    }
-}
-
-private data class PageInfo(var key: String, var page: Int = 0, var total: Int = 0) {
-    companion object {
-        const val MAX_LOAD_COUNT = 3
-    }
-    var queryPage = 0
-    var count: Int = 0
-    val loadProgress = AtomicInteger(0)
-
-    fun nextPage(): Int {
-        queryPage = queryPage.coerceAtLeast(page) + 1
-        return queryPage
-    }
-
-    fun isLastPage(): Boolean {
-        return count >= total
-    }
-
-    fun isLoading(): Boolean {
-        return loadProgress.get() == MAX_LOAD_COUNT
+        if (!pagingController.isLastPage()) {
+            return position < pagingController.total - 1
+        }
+        return pagingController.hasNextQuery()
     }
 }

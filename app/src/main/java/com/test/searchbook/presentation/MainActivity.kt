@@ -12,11 +12,11 @@ class MainActivity : BaseActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // test
         replaceFragmentIfNotExists(
             supportFragmentManager,
             binding.fragmentArea.id,
-            SearchFragment.TAG
+            SearchFragment.TAG,
+            addBackStack = false
         ) { SearchFragment.newInstance() }
     }
 }
