@@ -3,11 +3,11 @@ package com.test.searchbook.presentation.search
 import android.content.Context
 import android.graphics.Rect
 import android.os.Bundle
-import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -74,7 +74,7 @@ class SearchFragment : DaggerFragment() {
                     val item = bookViewModel.bookList.value?.getOrNull(it) as? ViewItem.BookItem
                         ?: return@subscribe
 
-                    bookViewModel.cancelPendingPage()
+                    bookViewModel.cancelPendingLoad()
                     val fragment = BookDetailFragment.newInstance(item.data.isbn13)
                     childFragmentManager.beginTransaction()
                         .setCustomAnimations(
@@ -132,12 +132,23 @@ class SearchFragment : DaggerFragment() {
 
         binding.editText.textChanges()
             .subscribe({
-                Log.d(TAG, "textChanges:$it")
-                binding.orView.isEnabled = !it.contains("|")
-                binding.exclusiveView.isEnabled = !it.contains("-")
                 binding.searchView.isEnabled = it.isNotEmpty()
             }, Throwable::printStackTrace)
             .addTo(compositeDisposable)
+
+        binding.editText.setOnEditorActionListener { _, i, _ ->
+            when (i) {
+                EditorInfo.IME_ACTION_SEARCH -> {
+                    val text = binding.editText.text.toString()
+                    if (text.isNotEmpty()) {
+                        bookViewModel.searchNextPage(text)
+                        hideKeyboard()
+                    }
+                    text.isNotEmpty()
+                }
+                else -> false
+            }
+        }
 
         binding.searchView.clicks()
             .throttleFirst(100, TimeUnit.MILLISECONDS)
@@ -145,22 +156,6 @@ class SearchFragment : DaggerFragment() {
             .subscribe({
                 bookViewModel.searchNextPage(binding.editText.text.toString())
                 hideKeyboard()
-            }, Throwable::printStackTrace)
-            .addTo(compositeDisposable)
-
-        binding.orView.clicks()
-            .subscribe({
-                val inputText = binding.editText.text.toString()
-                binding.editText.setText("$inputText|")
-                binding.editText.setSelection(binding.editText.text.length)
-            }, Throwable::printStackTrace)
-            .addTo(compositeDisposable)
-
-        binding.exclusiveView.clicks()
-            .subscribe({
-                val inputText = binding.editText.text.toString()
-                binding.editText.setText("$inputText-")
-                binding.editText.setSelection(binding.editText.text.length)
             }, Throwable::printStackTrace)
             .addTo(compositeDisposable)
     }
@@ -182,6 +177,14 @@ class SearchFragment : DaggerFragment() {
                 else -> {
                 }
             }
+        }
+
+        bookViewModel.toast.observe(viewLifecycleOwner) { str ->
+            Toast.makeText(
+                requireContext(),
+                str,
+                Toast.LENGTH_LONG
+            ).show()
         }
 
         bookViewModel.loading.observe(viewLifecycleOwner) { show ->

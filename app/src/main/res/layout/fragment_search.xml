@@ -10,6 +10,9 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
         android:layout_marginEnd="10dp"
+        android:maxLines="1"
+        android:imeOptions="actionSearch"
+        android:inputType="text"
         app:layout_constraintEnd_toStartOf="@id/search_view"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -24,41 +27,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/edit_text" />
 
-    <TextView
-        android:id="@+id/or_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:background="@drawable/round_bg_blue"
-        android:gravity="center"
-        android:includeFontPadding="false"
-        android:textColor="@android:color/white"
-        android:minWidth="10dp"
-        android:paddingStart="4dp"
-        android:paddingTop="2dp"
-        android:paddingEnd="4dp"
-        android:paddingBottom="2dp"
-        android:text="or"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/edit_text" />
-
-    <TextView
-        android:id="@+id/exclusive_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:background="@drawable/round_bg_blue"
-        android:gravity="center"
-        android:includeFontPadding="false"
-        android:textColor="@android:color/white"
-        android:paddingStart="4dp"
-        android:paddingTop="2dp"
-        android:paddingEnd="4dp"
-        android:paddingBottom="2dp"
-        android:text="exclusive"
-        app:layout_constraintStart_toEndOf="@id/or_view"
-        app:layout_constraintTop_toBottomOf="@id/edit_text" />
-
     <ProgressBar
         android:id="@+id/loading"
         android:layout_width="wrap_content"
@@ -67,7 +35,7 @@
         android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/or_view"/>
+        app:layout_constraintTop_toBottomOf="@id/edit_text"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/book_list"

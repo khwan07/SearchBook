@@ -17,6 +17,7 @@ class QueryTest {
             "android|-ios",
             "android-|ios",
             "-android|ios",
+            "-android-ios",
             "and-roid|ios",
             "and-roid-ios",
             "|",

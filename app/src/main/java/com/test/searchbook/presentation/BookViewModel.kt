@@ -1,9 +1,11 @@
 package com.test.searchbook.presentation
 
 import android.app.Application
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
+import com.test.searchbook.R
 import com.test.searchbook.presentation.search.PagingController
 import com.test.searchbook.presentation.search.ViewItem
 import com.test.searchbook.presentation.search.ViewType
@@ -13,7 +15,8 @@ import io.reactivex.rxjava3.kotlin.addTo
 import io.reactivex.rxjava3.kotlin.subscribeBy
 import javax.inject.Inject
 
-class BookViewModel @Inject constructor(application: Application) : AndroidViewModel(application) {
+class BookViewModel @Inject constructor(application: Application) :
+    AndroidViewModel(application) {
     companion object {
         private val TAG = BookViewModel::class.java.simpleName
     }
@@ -21,22 +24,25 @@ class BookViewModel @Inject constructor(application: Application) : AndroidViewM
     @Inject
     lateinit var bookRepository: BookRepository
 
+    private val context: Context
+        get() = getApplication<Application>().applicationContext
+
     private val searchDisposables = CompositeDisposable()
     private val loadingViewItem = ViewItem.LoadingItem(Long.MAX_VALUE)
     private var pagingController = PagingController()
     val bookList: MutableLiveData<List<ViewItem>> = MutableLiveData(listOf())
     val error: MutableLiveData<Throwable> = MutableLiveData()
     val loading: MutableLiveData<Boolean> = MutableLiveData(false)
-
+    val toast: MutableLiveData<String> = MutableLiveData()
 
     override fun onCleared() {
         searchDisposables.clear()
     }
 
-    fun searchNextPage(query: String) {
-        if (pagingController.key != query) {
+    fun searchNextPage(inputText: String) {
+        if (pagingController.key != inputText) {
             pagingController = PagingController()
-            pagingController.setQuery(query)
+            pagingController.setQuery(inputText)
             searchDisposables.clear()
             bookList.postValue(emptyList())
             showLoading(true)
@@ -44,30 +50,31 @@ class BookViewModel @Inject constructor(application: Application) : AndroidViewM
             return
         }
 
-        val validQuery = pagingController.validQuery() ?: return
+        val validQuery = pagingController.validQuery() ?: run {
+            if (bookList.value!!.isEmpty()) {
+                toast.postValue(context.getString(R.string.toast_no_result))
+                showLoading(false)
+            }
+            return
+        }
         val page = pagingController.nextPage(validQuery)
-        Log.d(TAG, "query page:$page, validQuery:$validQuery")
 
         pagingController.incrementLoading()
-        bookRepository.searchBook(query, page.toString())
+        bookRepository.searchBook(inputText, page.toString())
             .subscribeBy(
                 onError = {
                     Log.e(TAG, "search error : ${it.message}")
                     it.printStackTrace()
-                    cancelPendingPage()
+                    cancelPendingLoad()
                     error.postValue(it)
                     showLoading(false)
                 },
                 onSuccess = { result ->
-                    val append = pagingController.key == query
+                    val append = pagingController.key == inputText
 
-                    pagingController.key = query
-                    val loadProgress = pagingController.decrementLoading()
+                    pagingController.key = inputText
+                    pagingController.decrementLoading()
                     pagingController.setResult(result, validQuery)
-                    Log.d(
-                        TAG,
-                        "total:${result.total}, page:${pagingController.page}, count:${pagingController.count}, size:${result.books.size}, loadProgress:${loadProgress}"
-                    )
 
                     var list = if (append && bookList.value != null) {
                         val offset =
@@ -89,6 +96,9 @@ class BookViewModel @Inject constructor(application: Application) : AndroidViewM
                     }
                     bookList.postValue(list)
                     showLoading(false)
+                    if (pagingController.total == 0 && list.isEmpty()) {
+                        toast.postValue(context.getString(R.string.toast_no_result))
+                    }
                 }
             )
             .addTo(searchDisposables)
@@ -104,7 +114,7 @@ class BookViewModel @Inject constructor(application: Application) : AndroidViewM
         return pagingController.hasNextQuery()
     }
 
-    fun cancelPendingPage() {
+    fun cancelPendingLoad() {
         searchDisposables.clear()
         pagingController.validQuery()?.also {
             pagingController.resetLoading(it)

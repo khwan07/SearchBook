@@ -15,12 +15,8 @@ class PagingController {
     private var exclusiveQuery: QueryInfo? = null
 
     var key: String = ""
-    val page: Int
-        get() = queryInfoList.sumOf { it.page }
     val total: Int
         get() = queryInfoList.sumOf { it.total }
-    val count: Int
-        get() = queryInfoList.sumOf { it.count }
 
     fun nextPage(query: String): Int {
         return queryInfoList.find { it.query == query && !it.isLastPage() }?.nextQueryPage() ?: 0
@@ -68,10 +64,6 @@ class PagingController {
                 queryInfoList.add(QueryInfo(r))
             }
         }
-        for (q in queryInfoList) {
-            Log.d("PageInfo", "setQuery ${q.query}")
-        }
-        Log.d("PageInfo", "exclusive:${exclusiveQuery?.query}")
     }
 
     fun setResult(result: SearchResult, query: String) {
@@ -105,7 +97,7 @@ class QueryInfo(var query: String) {
             result.total.toInt()
         }.getOrDefault(0)
         count += result.books.size
-        Log.d("QueryInfo", "set page:$page, total:$total, count:$count")
+//        Log.d("QueryInfo", "set page:$page, total:$total, count:$count")
     }
 
     fun isLastPage(): Boolean {

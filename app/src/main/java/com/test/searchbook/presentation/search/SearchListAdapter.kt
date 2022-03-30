@@ -32,7 +32,7 @@ class SearchListAdapter(private val requestManager: RequestManager) :
         val item = items?.getOrNull(position)
         when {
             item is ViewItem.BookItem && holder is SearchViewHolder -> {
-                holder.bind(item.data, requestManager, item.id)
+                holder.bind(item.data, requestManager)
             }
             holder is SearchLoadingViewHolder -> {
                 // no op.
@@ -51,7 +51,6 @@ class SearchListAdapter(private val requestManager: RequestManager) :
         return items?.getOrNull(position)?.viewType?.ordinal ?: ViewType.LOADING.ordinal
     }
 
-    // TODO: id
     override fun getItemId(position: Int): Long {
         return items?.getOrNull(position)?.id ?: RecyclerView.NO_ID
     }

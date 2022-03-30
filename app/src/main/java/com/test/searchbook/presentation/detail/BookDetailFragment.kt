@@ -66,11 +66,7 @@ class BookDetailFragment : DaggerFragment() {
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeBy(
                 onError = {
-                    // TODO 에러처리
                     it.printStackTrace()
-                },
-                onComplete = {
-                    // TODO 에러처리
                 },
                 onSuccess = {
                     requestManager.load(it.image)
