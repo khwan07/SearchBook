@@ -11,23 +11,23 @@ class PagingController {
     }
 
     private val loadProgress = AtomicInteger(0)
-    private val queries = mutableListOf<QueryInfo>()
+    private val queryInfoList = mutableListOf<QueryInfo>()
     private var exclusiveQuery: QueryInfo? = null
 
     var key: String = ""
     val page: Int
-        get() = queries.sumOf { it.page }
+        get() = queryInfoList.sumOf { it.page }
     val total: Int
-        get() = queries.sumOf { it.total }
+        get() = queryInfoList.sumOf { it.total }
     val count: Int
-        get() = queries.sumOf { it.count }
+        get() = queryInfoList.sumOf { it.count }
 
     fun nextPage(query: String): Int {
-        return queries.find { it.query == query && !it.isLastPage() }?.nextQueryPage() ?: 0
+        return queryInfoList.find { it.query == query && !it.isLastPage() }?.nextQueryPage() ?: 0
     }
 
     fun isLastPage(): Boolean {
-        return queries.all { it.isLastPage() }
+        return queryInfoList.all { it.isLastPage() }
     }
 
     fun isMaxLoading(): Boolean {
@@ -39,11 +39,11 @@ class PagingController {
     }
 
     fun validQuery(): String? {
-        return queries.find { !it.isLastPage() }?.query
+        return queryInfoList.find { !it.isLastPage() }?.query
     }
 
     fun hasNextQuery(): Boolean {
-        return queries.any { !it.isLastPage() }
+        return queryInfoList.any { !it.isLastPage() }
     }
 
     fun incrementLoading() {
@@ -54,6 +54,11 @@ class PagingController {
         loadProgress.decrementAndGet()
     }
 
+    fun resetLoading(query: String) {
+        loadProgress.set(0)
+        queryInfoList.find { it.query == query && !it.isLastPage() }?.resetQueryPage()
+    }
+
     fun setQuery(query: String) {
         val orIndex = query.indexOf("|").takeIf { it != -1 } ?: Int.MAX_VALUE
         val exclusiveIndex = query.indexOf("-").takeIf { it != -1 } ?: Int.MAX_VALUE
@@ -61,17 +66,17 @@ class PagingController {
         when {
             orIndex < exclusiveIndex -> {
                 query.substring(0, orIndex).also {
-                    queries.add(QueryInfo(it))
+                    queryInfoList.add(QueryInfo(it))
                 }
                 if (orIndex + 1 < query.lastIndex) {
                     query.substring(orIndex + 1, query.length).also {
-                        queries.add(QueryInfo(it))
+                        queryInfoList.add(QueryInfo(it))
                     }
                 }
             }
             exclusiveIndex < orIndex -> {
                 query.substring(0, exclusiveIndex).also {
-                    queries.add(QueryInfo(it))
+                    queryInfoList.add(QueryInfo(it))
                 }
                 if (exclusiveIndex + 1 < query.lastIndex) {
                     query.substring(exclusiveIndex + 1, query.length).also {
@@ -80,16 +85,16 @@ class PagingController {
                 }
             }
             else -> {
-                queries.add(QueryInfo(query))
+                queryInfoList.add(QueryInfo(query))
             }
         }
-        Log.d("PageInfo", "setQuery:$queries, exclusive:$exclusiveQuery")
+        Log.d("PageInfo", "setQuery:$queryInfoList, exclusive:$exclusiveQuery")
     }
 
     fun setResult(result: SearchResult, query: String) {
-        val index = queries.indexOfFirst { it.query == query && !it.isLastPage() }
+        val index = queryInfoList.indexOfFirst { it.query == query && !it.isLastPage() }
         if (index != -1) {
-            queries[index].set(result)
+            queryInfoList[index].set(result)
         }
     }
 
@@ -126,5 +131,9 @@ class QueryInfo(var query: String) {
 
     fun nextQueryPage(): Int {
         return ++queryPage
+    }
+
+    fun resetQueryPage() {
+        queryPage = page
     }
 }

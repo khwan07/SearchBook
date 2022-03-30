@@ -31,7 +31,7 @@ class SearchViewHolder(private val binding: VhSearchBinding) : RecyclerView.View
 
     fun bind(book: Book, requestManager: RequestManager, id: Long) {
         requestManager.load(book.image)
-            .centerCrop()
+            .fitCenter()
             .into(binding.image)
 
         binding.title.text = book.title

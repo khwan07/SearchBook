@@ -30,6 +30,8 @@ class BookRepository @Inject constructor() {
 
     fun bookDetail(isbn13: String): Single<BookDetail> {
         return bookApi.booksDetail(isbn13)
-            .map { it.body() ?: throw IllegalArgumentException("bookDetail body is null") }
+            .map {
+                it.body() ?: throw IllegalArgumentException("bookDetail body is null")
+            }
     }
 }

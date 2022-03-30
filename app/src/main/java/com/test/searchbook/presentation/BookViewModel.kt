@@ -25,6 +25,7 @@ class BookViewModel @Inject constructor(application: Application) : AndroidViewM
     private val loadingViewItem = ViewItem.LoadingItem(Long.MAX_VALUE)
     private var pagingController = PagingController()
     val bookList: MutableLiveData<List<ViewItem>> = MutableLiveData(listOf())
+    val error: MutableLiveData<Throwable> = MutableLiveData()
 
 
     override fun onCleared() {
@@ -51,7 +52,9 @@ class BookViewModel @Inject constructor(application: Application) : AndroidViewM
                 onError = {
                     Log.e(TAG, "search error : ${it.message}")
                     it.printStackTrace()
-                    pagingController.decrementLoading()
+                    searchDisposables.clear()
+                    pagingController.resetLoading(validQuery)
+                    error.postValue(it)
                 },
                 onSuccess = { result ->
                     val append = pagingController.key == query

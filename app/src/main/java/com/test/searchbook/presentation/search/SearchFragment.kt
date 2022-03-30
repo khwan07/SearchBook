@@ -1,5 +1,6 @@
 package com.test.searchbook.presentation.search
 
+import android.content.Context
 import android.graphics.Rect
 import android.os.Bundle
 import android.util.Log
@@ -7,11 +8,14 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.jakewharton.rxbinding4.view.clicks
 import com.jakewharton.rxbinding4.widget.textChanges
+import com.test.searchbook.R
 import com.test.searchbook.databinding.FragmentSearchBinding
 import com.test.searchbook.presentation.BookViewModel
 import com.test.searchbook.presentation.detail.BookDetailFragment
@@ -19,6 +23,7 @@ import dagger.android.support.DaggerFragment
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.kotlin.addTo
+import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -133,6 +138,7 @@ class SearchFragment : DaggerFragment() {
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
                 bookViewModel.searchNextPage(binding.editText.text.toString())
+                hideKeyboard()
             }, Throwable::printStackTrace)
             .addTo(compositeDisposable)
 
@@ -140,6 +146,7 @@ class SearchFragment : DaggerFragment() {
             .subscribe({
                 val inputText = binding.editText.text.toString()
                 binding.editText.setText("$inputText|")
+                binding.editText.setSelection(binding.editText.text.length)
             }, Throwable::printStackTrace)
             .addTo(compositeDisposable)
 
@@ -147,6 +154,7 @@ class SearchFragment : DaggerFragment() {
             .subscribe({
                 val inputText = binding.editText.text.toString()
                 binding.editText.setText("$inputText-")
+                binding.editText.setSelection(binding.editText.text.length)
             }, Throwable::printStackTrace)
             .addTo(compositeDisposable)
     }
@@ -155,5 +163,28 @@ class SearchFragment : DaggerFragment() {
         bookViewModel.bookList.observe(viewLifecycleOwner) {
             adapter?.items = it
         }
+
+        bookViewModel.error.observe(viewLifecycleOwner) {
+            when (it) {
+                is UnknownHostException -> {
+                    Toast.makeText(
+                        requireContext(),
+                        getString(R.string.error_network),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                else -> {
+                }
+            }
+        }
+    }
+
+    private fun hideKeyboard() {
+        if (_binding == null) {
+            return
+        }
+        val imm =
+            requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(binding.editText.windowToken, 0)
     }
 }
