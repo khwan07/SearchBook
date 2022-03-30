@@ -6,13 +6,11 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import com.test.searchbook.R
+import com.test.searchbook.data.api.model.SearchResult
 import com.test.searchbook.presentation.search.PagingController
 import com.test.searchbook.presentation.search.ViewItem
 import com.test.searchbook.presentation.search.ViewType
 import com.test.searchbook.repository.BookRepository
-import io.reactivex.rxjava3.disposables.CompositeDisposable
-import io.reactivex.rxjava3.kotlin.addTo
-import io.reactivex.rxjava3.kotlin.subscribeBy
 import javax.inject.Inject
 
 class BookViewModel @Inject constructor(application: Application) :
@@ -27,7 +25,6 @@ class BookViewModel @Inject constructor(application: Application) :
     private val context: Context
         get() = getApplication<Application>().applicationContext
 
-    private val searchDisposables = CompositeDisposable()
     private val loadingViewItem = ViewItem.LoadingItem(Long.MAX_VALUE)
     private var pagingController = PagingController()
     val bookList: MutableLiveData<List<ViewItem>> = MutableLiveData(listOf())
@@ -36,14 +33,14 @@ class BookViewModel @Inject constructor(application: Application) :
     val toast: MutableLiveData<String> = MutableLiveData()
 
     override fun onCleared() {
-        searchDisposables.clear()
+        bookRepository.cancelSearch()
     }
 
     fun searchNextPage(inputText: String) {
         if (pagingController.key != inputText) {
             pagingController = PagingController()
             pagingController.setQuery(inputText)
-            searchDisposables.clear()
+            bookRepository.cancelSearch()
             bookList.postValue(emptyList())
             showLoading(true)
         } else if (pagingController.isLastPage()) {
@@ -60,16 +57,11 @@ class BookViewModel @Inject constructor(application: Application) :
         val page = pagingController.nextPage(validQuery)
 
         pagingController.incrementLoading()
-        bookRepository.searchBook(inputText, page.toString())
-            .subscribeBy(
-                onError = {
-                    Log.e(TAG, "search error : ${it.message}")
-                    it.printStackTrace()
-                    cancelPendingLoad()
-                    error.postValue(it)
-                    showLoading(false)
-                },
-                onSuccess = { result ->
+        bookRepository.searchBook(
+            validQuery,
+            page.toString(),
+            object : BookRepository.ApiCallback<SearchResult> {
+                override fun onSuccess(result: SearchResult) {
                     val append = pagingController.key == inputText
 
                     pagingController.key = inputText
@@ -100,8 +92,15 @@ class BookViewModel @Inject constructor(application: Application) :
                         toast.postValue(context.getString(R.string.toast_no_result))
                     }
                 }
-            )
-            .addTo(searchDisposables)
+
+                override fun onFailure(t: Throwable) {
+                    Log.e(TAG, "search error : ${t.message}")
+                    t.printStackTrace()
+                    cancelPendingLoad()
+                    error.postValue(t)
+                    showLoading(false)
+                }
+            })
     }
 
     fun needNextPage(position: Int): Boolean {
@@ -115,7 +114,7 @@ class BookViewModel @Inject constructor(application: Application) :
     }
 
     fun cancelPendingLoad() {
-        searchDisposables.clear()
+        bookRepository.cancelSearch()
         pagingController.validQuery()?.also {
             pagingController.resetLoading(it)
         }

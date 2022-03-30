@@ -1,9 +1,12 @@
 package com.test.searchbook.repository
 
+import android.util.Log
 import com.test.searchbook.data.api.BookApi
 import com.test.searchbook.data.api.model.BookDetail
 import com.test.searchbook.data.api.model.SearchResult
-import io.reactivex.rxjava3.core.Single
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -13,17 +16,61 @@ class BookRepository @Inject constructor() {
     @Inject
     lateinit var bookApi: BookApi
 
-    fun searchBook(query: String, page: String): Single<SearchResult> {
-        return bookApi.search(query, page)
-            .map {
-                it.body() ?: throw IllegalArgumentException("searchBook body is null")
-            }
+    private var searchCallQueue: Call<SearchResult>? = null
+    private var bookDetailQueue: Call<BookDetail>? = null
+
+    interface ApiCallback<T> {
+        fun onSuccess(data: T)
+        fun onFailure(t: Throwable)
     }
 
-    fun bookDetail(isbn13: String): Single<BookDetail> {
-        return bookApi.booksDetail(isbn13)
-            .map {
-                it.body() ?: throw IllegalArgumentException("bookDetail body is null")
+    fun searchBook(query: String, page: String, callback: ApiCallback<SearchResult>) {
+
+        searchCallQueue = bookApi.search(query, page)
+        searchCallQueue!!.enqueue(object : Callback<SearchResult> {
+            override fun onResponse(call: Call<SearchResult>, response: Response<SearchResult>) {
+                Log.d("BookRepository", "searchResponse ${response.body()?.page} thread:${Thread.currentThread().name}")
+                if (!response.isSuccessful) {
+                    callback.onFailure(IllegalStateException("search error:${response.code()}"))
+                    return
+                }
+                val data = response.body()
+                if (data != null) {
+                    callback.onSuccess(data)
+                } else {
+                    callback.onFailure(IllegalArgumentException("search body is null"))
+                }
             }
+
+            override fun onFailure(call: Call<SearchResult>, t: Throwable) {
+                callback.onFailure(t)
+            }
+        })
+    }
+
+    fun bookDetail(isbn13: String, callback: ApiCallback<BookDetail>) {
+        bookDetailQueue = bookApi.booksDetail(isbn13)
+        bookDetailQueue!!.enqueue(object : Callback<BookDetail> {
+            override fun onResponse(call: Call<BookDetail>, response: Response<BookDetail>) {
+                if (!response.isSuccessful) {
+                    callback.onFailure(IllegalStateException("bookDetail error:${response.code()}"))
+                    return
+                }
+                val data = response.body()
+                if (data != null) {
+                    callback.onSuccess(data)
+                } else {
+                    callback.onFailure(IllegalArgumentException("bookDetail body is null"))
+                }
+            }
+
+            override fun onFailure(call: Call<BookDetail>, t: Throwable) {
+                callback.onFailure(t)
+            }
+        })
+    }
+
+    fun cancelSearch() {
+        searchCallQueue?.cancel()
     }
 }
