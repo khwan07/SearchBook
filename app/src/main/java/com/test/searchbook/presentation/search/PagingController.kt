@@ -60,35 +60,18 @@ class PagingController {
     }
 
     fun setQuery(query: String) {
-        val orIndex = query.indexOf("|").takeIf { it != -1 } ?: Int.MAX_VALUE
-        val exclusiveIndex = query.indexOf("-").takeIf { it != -1 } ?: Int.MAX_VALUE
-
-        when {
-            orIndex < exclusiveIndex -> {
-                query.substring(0, orIndex).also {
-                    queryInfoList.add(QueryInfo(it))
-                }
-                if (orIndex + 1 < query.lastIndex) {
-                    query.substring(orIndex + 1, query.length).also {
-                        queryInfoList.add(QueryInfo(it))
-                    }
-                }
-            }
-            exclusiveIndex < orIndex -> {
-                query.substring(0, exclusiveIndex).also {
-                    queryInfoList.add(QueryInfo(it))
-                }
-                if (exclusiveIndex + 1 < query.lastIndex) {
-                    query.substring(exclusiveIndex + 1, query.length).also {
-                        exclusiveQuery = QueryInfo(it)
-                    }
-                }
-            }
-            else -> {
-                queryInfoList.add(QueryInfo(query))
+        val result = QueryNormalizer.normalize(query)
+        for (r in result) {
+            if (r.startsWith("-") && r.length > 1) {
+                exclusiveQuery = QueryInfo(r.substring(1, r.length))
+            } else {
+                queryInfoList.add(QueryInfo(r))
             }
         }
-        Log.d("PageInfo", "setQuery:$queryInfoList, exclusive:$exclusiveQuery")
+        for (q in queryInfoList) {
+            Log.d("PageInfo", "setQuery ${q.query}")
+        }
+        Log.d("PageInfo", "exclusive:${exclusiveQuery?.query}")
     }
 
     fun setResult(result: SearchResult, query: String) {

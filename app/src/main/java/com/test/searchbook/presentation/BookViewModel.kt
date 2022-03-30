@@ -26,6 +26,7 @@ class BookViewModel @Inject constructor(application: Application) : AndroidViewM
     private var pagingController = PagingController()
     val bookList: MutableLiveData<List<ViewItem>> = MutableLiveData(listOf())
     val error: MutableLiveData<Throwable> = MutableLiveData()
+    val loading: MutableLiveData<Boolean> = MutableLiveData(false)
 
 
     override fun onCleared() {
@@ -38,6 +39,7 @@ class BookViewModel @Inject constructor(application: Application) : AndroidViewM
             pagingController.setQuery(query)
             searchDisposables.clear()
             bookList.postValue(emptyList())
+            showLoading(true)
         } else if (pagingController.isLastPage()) {
             return
         }
@@ -52,9 +54,9 @@ class BookViewModel @Inject constructor(application: Application) : AndroidViewM
                 onError = {
                     Log.e(TAG, "search error : ${it.message}")
                     it.printStackTrace()
-                    searchDisposables.clear()
-                    pagingController.resetLoading(validQuery)
+                    cancelPendingPage()
                     error.postValue(it)
+                    showLoading(false)
                 },
                 onSuccess = { result ->
                     val append = pagingController.key == query
@@ -82,10 +84,11 @@ class BookViewModel @Inject constructor(application: Application) : AndroidViewM
                         }
                     }
 
-                    if (pagingController.isLoading()) {
+                    if (pagingController.isLoading() && !pagingController.isLastPage()) {
                         list = list + loadingViewItem
                     }
                     bookList.postValue(list)
+                    showLoading(false)
                 }
             )
             .addTo(searchDisposables)
@@ -96,8 +99,19 @@ class BookViewModel @Inject constructor(application: Application) : AndroidViewM
             return false
         }
         if (!pagingController.isLastPage()) {
-            return position < pagingController.total - 1
+            return position > bookList.value!!.size / 2
         }
         return pagingController.hasNextQuery()
+    }
+
+    fun cancelPendingPage() {
+        searchDisposables.clear()
+        pagingController.validQuery()?.also {
+            pagingController.resetLoading(it)
+        }
+    }
+
+    private fun showLoading(show: Boolean) {
+        loading.postValue(show)
     }
 }

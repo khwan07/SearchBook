@@ -74,9 +74,15 @@ class SearchFragment : DaggerFragment() {
                     val item = bookViewModel.bookList.value?.getOrNull(it) as? ViewItem.BookItem
                         ?: return@subscribe
 
-                    // TODO : animation
+                    bookViewModel.cancelPendingPage()
                     val fragment = BookDetailFragment.newInstance(item.data.isbn13)
                     childFragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            R.anim.slide_from_right,
+                            R.anim.slide_to_right,
+                            R.anim.slide_from_right,
+                            R.anim.slide_to_right
+                        )
                         .replace(binding.fragmentArea.id, fragment, BookDetailFragment.TAG)
                         .addToBackStack(BookDetailFragment.TAG)
                         .setPrimaryNavigationFragment(fragment)
@@ -175,6 +181,14 @@ class SearchFragment : DaggerFragment() {
                 }
                 else -> {
                 }
+            }
+        }
+
+        bookViewModel.loading.observe(viewLifecycleOwner) { show ->
+            if (show) {
+                binding.loading.visibility = View.VISIBLE
+            } else {
+                binding.loading.visibility = View.GONE
             }
         }
     }
