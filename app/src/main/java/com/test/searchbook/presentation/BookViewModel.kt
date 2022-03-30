@@ -60,7 +60,7 @@ class BookViewModel @Inject constructor(application: Application) :
         val page = pagingController.nextPage(validQuery)
 
         pagingController.incrementLoading()
-        bookRepository.searchBook(inputText, page.toString())
+        bookRepository.searchBook(validQuery, page.toString())
             .subscribeBy(
                 onError = {
                     Log.e(TAG, "search error : ${it.message}")

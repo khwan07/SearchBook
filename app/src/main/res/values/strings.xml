@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">SearchBook</string>
+    <string name="dot" translatable="false">\u2022</string>
+    <string name="error_network">Failed loading contents.\nPlease check the network and try again.</string>
+    <string name="error_unknown">Unknown error has occurred. Please try again later.</string>
+    <string name="toast_no_result">No search results.</string>
+</resources>
