@@ -5,7 +5,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import com.test.searchbook.data.api.model.BookDetail
 import com.test.searchbook.repository.BookRepository
-import io.reactivex.rxjava3.core.Maybe
 import javax.inject.Inject
 
 class BookDetailViewModel @Inject constructor(application: Application) :
@@ -15,12 +14,18 @@ class BookDetailViewModel @Inject constructor(application: Application) :
     lateinit var bookRepository: BookRepository
 
     val error: MutableLiveData<Throwable> = MutableLiveData()
+    val bookDetail: MutableLiveData<BookDetail> = MutableLiveData()
 
-    fun getBookDetail(isbn13: String): Maybe<BookDetail> {
-        return bookRepository.bookDetail(isbn13)
-            .toMaybe()
-            .doOnError { error.postValue(it) }
-            .onErrorResumeNext { Maybe.empty() }
+    fun getBookDetail(isbn13: String) {
+        bookRepository.bookDetail(isbn13, object : BookRepository.ApiCallback<BookDetail> {
+            override fun onSuccess(data: BookDetail) {
+                bookDetail.postValue(data)
+            }
+
+            override fun onFailure(t: Throwable) {
+                error.postValue(t)
+            }
+        })
     }
 
 }

@@ -4,11 +4,8 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
-import com.jakewharton.rxbinding4.view.clicks
 import com.test.searchbook.data.api.model.Book
 import com.test.searchbook.databinding.VhSearchBinding
-import io.reactivex.rxjava3.subjects.PublishSubject
-import io.reactivex.rxjava3.subjects.Subject
 
 class SearchViewHolder(private val binding: VhSearchBinding) : RecyclerView.ViewHolder(binding.root) {
     companion object {
@@ -23,13 +20,15 @@ class SearchViewHolder(private val binding: VhSearchBinding) : RecyclerView.View
         }
     }
 
-    val click: Subject<RecyclerView.ViewHolder> = PublishSubject.create()
+    var clickListener: ((RecyclerView.ViewHolder) -> Unit)? = null
 
     init {
-        binding.root.clicks().map { this@SearchViewHolder }.subscribe(click)
+        binding.root.setOnClickListener {
+            clickListener?.invoke(this@SearchViewHolder)
+        }
     }
 
-    fun bind(book: Book, requestManager: RequestManager) {
+    fun bind(book: Book, requestManager: RequestManager, id: Long) {
         requestManager.load(book.image)
             .fitCenter()
             .into(binding.image)
@@ -37,5 +36,6 @@ class SearchViewHolder(private val binding: VhSearchBinding) : RecyclerView.View
         binding.title.text = book.title
         binding.subtitle.text = book.subtitle
         binding.price.text = book.price
+        binding.debugText.text = "$id"
     }
 }

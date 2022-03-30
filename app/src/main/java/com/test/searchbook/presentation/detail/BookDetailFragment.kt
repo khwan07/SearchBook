@@ -15,10 +15,6 @@ import com.test.searchbook.R
 import com.test.searchbook.databinding.FragmentDetailBinding
 import com.test.searchbook.presentation.BookDetailViewModel
 import dagger.android.support.DaggerFragment
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.disposables.CompositeDisposable
-import io.reactivex.rxjava3.kotlin.addTo
-import io.reactivex.rxjava3.kotlin.subscribeBy
 import java.net.UnknownHostException
 import javax.inject.Inject
 
@@ -46,7 +42,6 @@ class BookDetailFragment : DaggerFragment() {
     private var _binding: FragmentDetailBinding? = null
     private val binding: FragmentDetailBinding
         get() = _binding!!
-    private val compositeDisposable = CompositeDisposable()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -63,44 +58,38 @@ class BookDetailFragment : DaggerFragment() {
         val isbn13 = (arguments ?: savedInstanceState)?.getString(KEY_ISBN13, "") ?: ""
 
         bookDetailViewModel.getBookDetail(isbn13)
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribeBy(
-                onError = {
-                    it.printStackTrace()
-                },
-                onSuccess = {
-                    requestManager.load(it.image)
-                        .fitCenter()
-                        .into(binding.image)
 
-                    binding.title.text = it.title
-                    binding.subtitle.text = it.subtitle
-                    binding.author.text = it.authors
-                    binding.publisher.text = " ${getString(R.string.dot)} ${it.publisher}"
-                    binding.year.text = it.year
-                    binding.price.text = it.price
-                    binding.desc.text = it.desc
-                    binding.url.apply {
-                        if (it.url.isEmpty()) {
-                            return@apply
-                        }
-                        val span = SpannableString(it.url)
-                        span.setSpan(
-                            object : ClickableSpan() {
-                                override fun onClick(p0: View) {
-                                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it.url)))
-                                }
-                            },
-                            0, it.url.length,
-                            Spannable.SPAN_INCLUSIVE_EXCLUSIVE
-                        )
-                        text = span
-                        isClickable = true
-                        movementMethod = LinkMovementMethod.getInstance()
-                    }
+        bookDetailViewModel.bookDetail.observe(viewLifecycleOwner) {
+            requestManager.load(it.image)
+                .fitCenter()
+                .into(binding.image)
+
+            binding.title.text = it.title
+            binding.subtitle.text = it.subtitle
+            binding.author.text = it.authors
+            binding.publisher.text = " ${getString(R.string.dot)} ${it.publisher}"
+            binding.year.text = it.year
+            binding.price.text = it.price
+            binding.desc.text = it.desc
+            binding.url.apply {
+                if (it.url.isEmpty()) {
+                    return@apply
                 }
-            )
-            .addTo(compositeDisposable)
+                val span = SpannableString(it.url)
+                span.setSpan(
+                    object : ClickableSpan() {
+                        override fun onClick(p0: View) {
+                            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it.url)))
+                        }
+                    },
+                    0, it.url.length,
+                    Spannable.SPAN_INCLUSIVE_EXCLUSIVE
+                )
+                text = span
+                isClickable = true
+                movementMethod = LinkMovementMethod.getInstance()
+            }
+        }
 
         bookDetailViewModel.error.observe(viewLifecycleOwner) {
             val message = when (it) {
@@ -117,7 +106,6 @@ class BookDetailFragment : DaggerFragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        compositeDisposable.clear()
         _binding = null
     }
 }

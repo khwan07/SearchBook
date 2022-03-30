@@ -4,8 +4,6 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.test.searchbook.presentation.SimpleAdapter
-import io.reactivex.rxjava3.subjects.PublishSubject
-import io.reactivex.rxjava3.subjects.Subject
 
 class SearchListAdapter(private val requestManager: RequestManager) :
     SimpleAdapter<ViewItem, RecyclerView.ViewHolder>() {
@@ -14,13 +12,13 @@ class SearchListAdapter(private val requestManager: RequestManager) :
         setHasStableIds(true)
     }
 
-    val click: Subject<RecyclerView.ViewHolder> = PublishSubject.create()
+    var clickListener: ((RecyclerView.ViewHolder) -> Unit)? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
             ViewType.BOOK.ordinal -> {
                 SearchViewHolder.newInstance(parent)
-                    .apply { this.click.subscribe(this@SearchListAdapter.click) }
+                    .apply { this.clickListener = this@SearchListAdapter.clickListener }
             }
             else -> {
                 SearchLoadingViewHolder.newInstance(parent)
@@ -32,7 +30,7 @@ class SearchListAdapter(private val requestManager: RequestManager) :
         val item = items?.getOrNull(position)
         when {
             item is ViewItem.BookItem && holder is SearchViewHolder -> {
-                holder.bind(item.data, requestManager)
+                holder.bind(item.data, requestManager, item.id)
             }
             holder is SearchLoadingViewHolder -> {
                 // no op.

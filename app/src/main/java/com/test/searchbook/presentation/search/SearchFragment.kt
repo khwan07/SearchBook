@@ -10,21 +10,16 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
+import androidx.core.widget.doOnTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
-import com.jakewharton.rxbinding4.view.clicks
-import com.jakewharton.rxbinding4.widget.textChanges
 import com.test.searchbook.R
 import com.test.searchbook.databinding.FragmentSearchBinding
 import com.test.searchbook.presentation.BookViewModel
 import com.test.searchbook.presentation.detail.BookDetailFragment
 import dagger.android.support.DaggerFragment
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.disposables.CompositeDisposable
-import io.reactivex.rxjava3.kotlin.addTo
 import java.net.UnknownHostException
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class SearchFragment : DaggerFragment() {
@@ -44,7 +39,6 @@ class SearchFragment : DaggerFragment() {
     private var _binding: FragmentSearchBinding? = null
     private val binding: FragmentSearchBinding
         get() = _binding!!
-    private val compositeDisposable = CompositeDisposable()
     private var adapter: SearchListAdapter? = null
 
     override fun onCreateView(
@@ -63,33 +57,30 @@ class SearchFragment : DaggerFragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        compositeDisposable.clear()
         _binding = null
     }
 
     private fun initUI() {
         adapter = SearchListAdapter(requestManager).apply {
-            click.map { it.adapterPosition }
-                .subscribe({
-                    val item = bookViewModel.bookList.value?.getOrNull(it) as? ViewItem.BookItem
-                        ?: return@subscribe
+            clickListener = listener@{ viewHolder ->
+                val pos = viewHolder.adapterPosition
+                val item = bookViewModel.bookList.value?.getOrNull(pos) as? ViewItem.BookItem
+                    ?: return@listener
 
-                    bookViewModel.cancelPendingLoad()
-                    val fragment = BookDetailFragment.newInstance(item.data.isbn13)
-                    childFragmentManager.beginTransaction()
-                        .setCustomAnimations(
-                            R.anim.slide_from_right,
-                            R.anim.slide_to_right,
-                            R.anim.slide_from_right,
-                            R.anim.slide_to_right
-                        )
-                        .replace(binding.fragmentArea.id, fragment, BookDetailFragment.TAG)
-                        .addToBackStack(BookDetailFragment.TAG)
-                        .setPrimaryNavigationFragment(fragment)
-                        .commitAllowingStateLoss()
-
-                }, Throwable::printStackTrace)
-                .addTo(compositeDisposable)
+                bookViewModel.cancelPendingLoad()
+                val fragment = BookDetailFragment.newInstance(item.data.isbn13)
+                childFragmentManager.beginTransaction()
+                    .setCustomAnimations(
+                        R.anim.slide_from_right,
+                        R.anim.slide_to_right,
+                        R.anim.slide_from_right,
+                        R.anim.slide_to_right
+                    )
+                    .replace(binding.fragmentArea.id, fragment, BookDetailFragment.TAG)
+                    .addToBackStack(BookDetailFragment.TAG)
+                    .setPrimaryNavigationFragment(fragment)
+                    .commitAllowingStateLoss()
+            }
         }
         binding.bookList.itemAnimator = null
         binding.bookList.layoutManager =
@@ -130,11 +121,9 @@ class SearchFragment : DaggerFragment() {
 
         binding.searchView.isEnabled = false
 
-        binding.editText.textChanges()
-            .subscribe({
-                binding.searchView.isEnabled = it.isNotEmpty()
-            }, Throwable::printStackTrace)
-            .addTo(compositeDisposable)
+        binding.editText.doOnTextChanged { text, start, before, count ->
+            binding.searchView.isEnabled = text?.isNotEmpty() == true
+        }
 
         binding.editText.setOnEditorActionListener { _, i, _ ->
             when (i) {
@@ -150,14 +139,10 @@ class SearchFragment : DaggerFragment() {
             }
         }
 
-        binding.searchView.clicks()
-            .throttleFirst(100, TimeUnit.MILLISECONDS)
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({
-                bookViewModel.searchNextPage(binding.editText.text.toString())
-                hideKeyboard()
-            }, Throwable::printStackTrace)
-            .addTo(compositeDisposable)
+        binding.searchView.setOnClickListener {
+            bookViewModel.searchNextPage(binding.editText.text.toString())
+            hideKeyboard()
+        }
     }
 
     private fun initViewModel() {
