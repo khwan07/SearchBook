@@ -60,7 +60,6 @@ dependencies {
     implementation 'io.reactivex.rxjava3:rxandroid:3.0.0'
     implementation 'com.jakewharton.rxbinding4:rxbinding:4.0.0'
     implementation 'com.jakewharton.rxbinding4:rxbinding-core:4.0.0'
-//    implementation 'com.jakewharton.rxbinding4:rxbinding-appcompat:4.0.0'
 
     // dagger
     implementation 'com.google.dagger:dagger:2.35.1'
