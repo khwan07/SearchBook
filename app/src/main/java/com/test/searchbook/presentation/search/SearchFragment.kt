@@ -88,6 +88,8 @@ class SearchFragment : DaggerFragment() {
                         ?: return@subscribe
 
                     bookViewModel.cancelPendingLoad()
+                    hideKeyboard()
+
                     val fragment = BookDetailFragment.newInstance(item.data.isbn13)
                     childFragmentManager.beginTransaction()
                         .setCustomAnimations(
