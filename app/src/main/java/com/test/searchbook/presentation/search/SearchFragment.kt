@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.core.widget.doOnTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
 import com.test.searchbook.R
 import com.test.searchbook.databinding.FragmentSearchBinding
@@ -25,6 +26,9 @@ import javax.inject.Inject
 class SearchFragment : DaggerFragment() {
     companion object {
         const val TAG = "SearchFragment"
+
+        const val KEY_INPUT_TEXT = "key_input_text"
+
         fun newInstance(): SearchFragment {
             return SearchFragment()
         }
@@ -33,9 +37,7 @@ class SearchFragment : DaggerFragment() {
     @Inject
     lateinit var bookViewModel: BookViewModel
 
-    @Inject
-    lateinit var requestManager: RequestManager
-
+    private val requestManager: RequestManager by lazy { Glide.with(this) }
     private var _binding: FragmentSearchBinding? = null
     private val binding: FragmentSearchBinding
         get() = _binding!!
@@ -53,11 +55,22 @@ class SearchFragment : DaggerFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         initUI()
         initViewModel()
+
+        savedInstanceState?.getString(KEY_INPUT_TEXT)?.also {
+            if (bookViewModel.bookList.value.isNullOrEmpty()) {
+                bookViewModel.searchNextPage(it)
+            }
+        }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(KEY_INPUT_TEXT, binding.editText.text.toString())
     }
 
     private fun initUI() {
@@ -188,5 +201,7 @@ class SearchFragment : DaggerFragment() {
         val imm =
             requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(binding.editText.windowToken, 0)
+
+        binding.editText.clearFocus()
     }
 }
