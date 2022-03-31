@@ -19,8 +19,6 @@ class ApiProvider @Inject constructor() {
         const val BOOK_API_HOST = "https://api.itbook.store/1.0/"
     }
 
-    private val executor = Executors.newSingleThreadExecutor()
-
     private fun getRetrofitApiClient(url: String): Retrofit {
         val clientBuilder = createOkHttpClientBuilder()
         val gson = GsonBuilder().setLenient().create()
@@ -28,7 +26,6 @@ class ApiProvider @Inject constructor() {
             .client(clientBuilder.build())
             .baseUrl(url)
             .addConverterFactory(GsonConverterFactory.create(gson))
-//            .addCallAdapterFactory(DefaultCallAdapterFactory) // TODO
             .build()
     }
 

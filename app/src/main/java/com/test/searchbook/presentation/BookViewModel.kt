@@ -86,7 +86,7 @@ class BookViewModel @Inject constructor(application: Application) :
                     if (pagingController.isLoading() && !pagingController.isLastPage()) {
                         list = list + loadingViewItem
                     }
-                    bookList.postValue(list)
+                    bookList.value = list
                     showLoading(false)
                     if (pagingController.total == 0 && list.isEmpty()) {
                         toast.postValue(context.getString(R.string.toast_no_result))
