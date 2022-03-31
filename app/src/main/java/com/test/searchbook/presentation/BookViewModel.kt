@@ -121,6 +121,18 @@ class BookViewModel @Inject constructor(application: Application) :
         }
     }
 
+    fun addLoadingItem(): Boolean {
+        val list = bookList.value ?: return false
+        if (!pagingController.isLoading() || pagingController.isLastPage()) {
+            return false
+        }
+        if (list.lastOrNull()?.viewType == ViewType.LOADING) {
+            return false
+        }
+        bookList.postValue(list + loadingViewItem)
+        return true
+    }
+
     private fun showLoading(show: Boolean) {
         loading.postValue(show)
     }

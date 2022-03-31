@@ -135,6 +135,15 @@ class SearchFragment : DaggerFragment() {
                 if (dy <= 0) {
                     return
                 }
+
+                if (!recyclerView.canScrollVertically(1) && bookViewModel.addLoadingItem()) {
+                    binding.bookList.post {
+                        _binding?.bookList?.scrollToPosition(
+                            bookViewModel.bookList.value?.lastIndex ?: 0
+                        )
+                    }
+                }
+
                 val lastPosition =
                     (recyclerView.layoutManager as LinearLayoutManager).findLastVisibleItemPosition()
                 if (bookViewModel.needNextPage(lastPosition)) {
