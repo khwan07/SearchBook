@@ -16,6 +16,9 @@ class BookRepository @Inject constructor() {
     fun searchBook(query: String, page: String): Single<SearchResult> {
         return bookApi.search(query, page)
             .map {
+                if (!it.isSuccessful) {
+                    throw IllegalStateException("searchBook error:${it.code()}")
+                }
                 it.body() ?: throw IllegalArgumentException("searchBook body is null")
             }
     }
@@ -23,6 +26,9 @@ class BookRepository @Inject constructor() {
     fun bookDetail(isbn13: String): Single<BookDetail> {
         return bookApi.booksDetail(isbn13)
             .map {
+                if (!it.isSuccessful) {
+                    throw IllegalStateException("bookDetail error:${it.code()}")
+                }
                 it.body() ?: throw IllegalArgumentException("bookDetail body is null")
             }
     }
