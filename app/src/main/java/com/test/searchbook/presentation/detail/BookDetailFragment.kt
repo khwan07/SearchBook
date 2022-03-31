@@ -10,6 +10,7 @@ import android.text.style.ClickableSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
 import com.test.searchbook.R
 import com.test.searchbook.databinding.FragmentDetailBinding
@@ -40,8 +41,7 @@ class BookDetailFragment : DaggerFragment() {
     @Inject
     lateinit var bookDetailViewModel: BookDetailViewModel
 
-    @Inject
-    lateinit var requestManager: RequestManager
+    private val requestManager: RequestManager by lazy { Glide.with(this) }
 
     private var _binding: FragmentDetailBinding? = null
     private val binding: FragmentDetailBinding
@@ -119,5 +119,10 @@ class BookDetailFragment : DaggerFragment() {
         super.onDestroyView()
         compositeDisposable.clear()
         _binding = null
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(KEY_ISBN13, arguments?.getString(KEY_ISBN13))
     }
 }
