@@ -108,7 +108,7 @@ class BookViewModel @Inject constructor(application: Application) :
             return false
         }
         if (!pagingController.isLastPage()) {
-            return position > bookList.value!!.size / 2
+            return position > bookList.value!!.size - 50
         }
         return pagingController.hasNextQuery()
     }
