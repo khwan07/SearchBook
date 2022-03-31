@@ -28,7 +28,7 @@ class SearchViewHolder(private val binding: VhSearchBinding) : RecyclerView.View
         }
     }
 
-    fun bind(book: Book, requestManager: RequestManager, id: Long) {
+    fun bind(book: Book, requestManager: RequestManager) {
         requestManager.load(book.image)
             .fitCenter()
             .into(binding.image)
@@ -36,6 +36,5 @@ class SearchViewHolder(private val binding: VhSearchBinding) : RecyclerView.View
         binding.title.text = book.title
         binding.subtitle.text = book.subtitle
         binding.price.text = book.price
-        binding.debugText.text = "$id"
     }
 }

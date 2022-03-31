@@ -30,7 +30,7 @@ class SearchListAdapter(private val requestManager: RequestManager) :
         val item = items?.getOrNull(position)
         when {
             item is ViewItem.BookItem && holder is SearchViewHolder -> {
-                holder.bind(item.data, requestManager, item.id)
+                holder.bind(item.data, requestManager)
             }
             holder is SearchLoadingViewHolder -> {
                 // no op.
